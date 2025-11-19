@@ -1,10 +1,13 @@
 package ecommerce.productservice.product;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import ecommerce.productservice.exception.ProductPurchaseException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
@@ -44,16 +47,39 @@ public class ProductService {
 	}
 	
 	//purchaseProducts
-//	@Transactional(rollbackFor = ProductPurchaseException.class)
-//	public List<ProductPurchaseResponse> purchaseProducts(
-//			List<ProductPurchaseRequest> request){
-//		var productIds = request
-//				.stream()
-//				.map(ProductPurchaseRequest::productid)
-//				.toList();
-//		
-//		
-//				return null;
-//		
-//	}
+	//@Transactional(rollbackFor = ProductPurchaseException.class)
+	public List<ProductPurchaseResponse> purchaseProducts(
+			List<ProductPurchaseRequest> request){
+		var productIds = request
+				.stream()
+				.map(ProductPurchaseRequest::productid)
+				.toList();
+		
+		var storedProducts = productRepository.findAllByIdInOrderById(productIds);
+		if(productIds.size() != storedProducts.size()) {
+			throw new ProductPurchaseException("One or more products does not exists");
+		}
+		
+		var storedRequest = request
+				.stream()
+				.sorted(Comparator.comparing(ProductPurchaseRequest::productid))
+				.toList();
+		
+		var purchasedProducts = new ArrayList<ProductPurchaseResponse>();
+		for(int i =0;i < storedProducts.size();i++) {
+			var product = storedProducts.get(i);
+			var productRequest = storedRequest.get(i);
+			if(product.getAvialableQuantity()<productRequest.quantity()) {
+				throw new ProductPurchaseException("Insufficient stock quantity for this product with ID ::" + productRequest.productid());
+			}
+			
+			var newAvailableQuantity = product.getAvialableQuantity() - productRequest.quantity();
+			product.setAvialableQuantity(newAvailableQuantity);
+			productRepository.save(product);
+			purchasedProducts.add(productMapper.toProductPurchaseResponse(product,productRequest.quantity()));
+		}
+		
+		return purchasedProducts;
+		
+	}
 }
