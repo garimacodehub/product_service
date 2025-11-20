@@ -47,7 +47,7 @@ public class ProductService {
 	}
 	
 	//purchaseProducts
-	//@Transactional(rollbackFor = ProductPurchaseException.class)
+	@Transactional(rollbackOn = ProductPurchaseException.class)
 	public List<ProductPurchaseResponse> purchaseProducts(
 			List<ProductPurchaseRequest> request){
 		var productIds = request

@@ -1,7 +1,9 @@
 package ecommerce.productservice.product;
 
-import ecommerce.productservice.category.Category;
+import org.springframework.stereotype.Component;
 
+import ecommerce.productservice.category.Category;
+@Component
 public class ProductMapper {
 
 	//Converts product request coming from API into Entity(Product)
